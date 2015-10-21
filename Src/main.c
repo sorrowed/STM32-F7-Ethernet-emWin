@@ -34,6 +34,7 @@
 #include "stm32f7xx_hal.h"
 #include "cmsis_os.h"
 #include "lwip.h"
+#include "stm32746g_discovery_sdram.h"
 
 #include "WM.h"
 
@@ -59,7 +60,7 @@ int main( void )
 
 	emWinStart();
 
-	osThreadDef( defaultTask, StartDefaultTask, osPriorityNormal, 0, 128 );
+	osThreadDef( defaultTask, StartDefaultTask, osPriorityNormal, 0, 512 );
 	defaultTaskHandle = osThreadCreate( osThread( defaultTask ), NULL );
 
 	osKernelStart();
@@ -139,27 +140,47 @@ void MX_GPIO_Init( void )
 void emWinStart()
 {
 	BSP_SDRAM_Init();
-	__HAL_RCC_CRC_CLK_ENABLE()
-	;
+
+	// CRC is needed for GUI. Whatever.
+	__HAL_RCC_CRC_CLK_ENABLE();
 	GUI_Init();
-	/* Activate the use of memory device feature */
+
 	WM_SetCreateFlags( WM_CF_MEMDEV );
 
 	GUI_Clear();
 }
 
+extern WM_HWIN CreateFramewin(void);
+extern void AddGraphPoint( int value );
+extern void DisplayCpu( WM_HWIN dlg, int value );
+#include "cpu_utils.h"
+
+#include <stdlib.h>
+#include <math.h>
+
 void StartDefaultTask( void const * args )
 {
-	GUI_SetFont(&GUI_Font20_1);
-	GUI_DispStringAt("Hello world!", (LCD_GetXSize()-100)/2, (LCD_GetYSize()-20)/2);
+	GUI_SetFont( &GUI_Font20_1 );
+	GUI_DispStringAt( "Starting network...", (LCD_GetXSize() - 100) / 2, (LCD_GetYSize() - 20) / 2 );
 
 	MX_LWIP_Reset();
 	MX_LWIP_Init();
+
+	WM_HWIN dlg = CreateFramewin();
+
+	srand( osKernelSysTick() );
+
+	float omega = 2 * (float)M_PI * 0.2f;
 
 	for( ;; )
 	{
 		GUI_Exec();
 		osDelay( 20 );
+
+		float s = 50 * sin( omega * osKernelSysTick() / 1000 );
+
+		AddGraphPoint( 100 + s + rand() % 10 );
+		DisplayCpu( dlg, osGetCPUUsage() );
 	}
 }
 
