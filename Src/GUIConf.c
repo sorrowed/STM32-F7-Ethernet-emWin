@@ -52,20 +52,13 @@ Purpose     : Display controller initialization
   */
 
 #include "GUI.h"
-
+#include "stm32746g_discovery_sdram.h"
 /*********************************************************************
 *
 *       Defines
 *
 **********************************************************************
 */
-//
-// Define the available number of bytes available for the GUI
-//
-#define GUI_NUMBYTES  (1024) *  150
-
-U32 aMemory[GUI_NUMBYTES / 4];
-
 /*********************************************************************
 *
 *       Public code
@@ -85,7 +78,7 @@ void GUI_X_Config(void)
   //
   // Assign memory to STemWin
   //
-  GUI_ALLOC_AssignMemory(aMemory, GUI_NUMBYTES);
+  GUI_ALLOC_AssignMemory( (void*)SDRAM_DEVICE_ADDR, SDRAM_DEVICE_SIZE );
 }
 
 /*************************** End of file ****************************/
